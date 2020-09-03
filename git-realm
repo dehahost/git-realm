@@ -1,0 +1,100 @@
+#!/bin/bash
+
+##
+# ____ _ ___    ____ ____ ____ _    _  _
+# | __ |  |  __ |__/ |___ |__| |    |\/|
+# |__] |  |     |  \ |___ |  | |___ |  |
+#
+_version="1.0.0"
+# by dehahost
+## 
+
+
+## Vars
+_current=$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/')
+_realm_name=$(echo realm $(shuf -n 2 /usr/share/dict/cracklib-small) | sed -e 's/ /-/g' -e "s/'s//g")
+
+
+## Functions
+# - Beginswith - Compares ${2} to ${1}.
+beginswith() { case ${2} in "${1}"*) true;; *) false;; esac; }
+# - Tabbed echo
+echot() { echo -e "\t$@"; }
+
+
+## Program section
+
+# - Are you in a Git repo?
+if [ "${_current}" = "" ]; then
+	echo "You are not in a Git repository."
+	exit 1
+fi
+
+# - Let's realm!
+case "${1}" in
+   "enter")
+		# - Enter a new realm or a existing one
+		if [ "${2}" = "--switch" -a ! "${_current}" = "master" ]; then
+			# The --switch action
+			echo "Switching you to the master branch..."
+			git switch master
+		fi
+
+		_realm=${_realm_name} #TODO: extend 'enter' sub-cmd so it's possible to enter already exising realm.
+
+		echo "Entering a new realm called \"$(echo ${_realm} | cut -d'-' -f2-)\"..."
+		git switch --create ${_realm}
+;; "leave")
+		# - Leave a realm branch only if user is currenly in it.
+		if beginswith "realm-" "${_current}"; then
+			echo "Leaving $(echo ${_current} | cut -d'-' -f2-) realm..."
+			git switch master
+		else
+			echo "You are not in a realm."
+		fi
+;; "dispose")
+		# - Delete a realm without traces
+		if beginswith "realm-" "${_current}"; then
+			echo "Disposing current realm called \"$(echo ${_current} | cut -d'-' -f2-)\"..."
+			_realm=${_current}
+			git switch --discard-changes master
+			git branch --delete --force ${_realm}
+		else
+			echo "You are not in a realm."
+		fi
+;; "list")
+		# - List realm branches
+		git branch | grep -E "^(\*| ) realm-.+$" | sed -e 's/realm-//g'
+;; "help")
+		# - Man-like help
+		echo  "git-realm - A precious Git branch extention."
+		echo  "Version ${_version}; By dehahost"
+		echo  ""
+		echo  "SYNOPSIS"
+		echot "git realm enter [--switch]"
+		echot "git realm (leave|dispose)"
+		echot "git realm list"
+		echot ""
+		echo  ""
+		echo  "DESCRIPTION"
+		echot "A simple Git extention for entering and leaving coding realms in Git."
+		echo  ""
+		echo  "OPTIONS"
+		echot "--switch"
+		echot "    Can be used with 'git realm enter' command. When it is used, entering to a new realm will be done from the master branch."
+		echo  ""
+		echot "dispose"
+		echot "    Switches user to the master branch and deletes previously used realm. Any uncommited changes will be discarded!"
+		echo  ""
+		echot "enter"
+		echot "    Creates and switches user to a new branch named 'realm' followed by two random words, the words are separated by a hyphen (ie. realm-octopus-retire)."
+		echot "    Entering to a new realm from existing one can be done."
+		echo  ""
+		echot "leave"
+		echot "    Leaves an active realm and returns to the master branch. This also applies to the nested realm as well."
+		echo  ""
+		echot "list"
+		echot "    List all available realms in the current Git repository."
+;;	*)
+		echo "Wrong command. Type 'git realm help' for help."
+esac
