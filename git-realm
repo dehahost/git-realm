@@ -16,8 +16,6 @@ _realm_name=$(echo realm $(shuf -n 2 /usr/share/dict/cracklib-small) | sed -e 's
 
 
 ## Functions
-# - Beginswith - Compares ${2} to ${1}.
-beginswith() { case ${2} in "${1}"*) true;; *) false;; esac; }
 # - Tabbed echo
 echot() { echo -e "\t$@"; }
 
@@ -46,7 +44,7 @@ case "${1}" in
 		git switch --create ${_realm}
 ;; "leave")
 		# - Leave a realm branch only if user is currenly in it.
-		if beginswith "realm-" "${_current}"; then
+		if [[ "${_current}" =~ ^realm-.*$ ]]; then
 			echo "Leaving $(echo ${_current} | cut -d'-' -f2-) realm..."
 			git switch master
 		else
@@ -54,7 +52,7 @@ case "${1}" in
 		fi
 ;; "dispose")
 		# - Delete a realm without traces
-		if beginswith "realm-" "${_current}"; then
+		if [[ "${_current}" =~ ^realm-.*$ ]]; then
 			echo "Disposing current realm called \"$(echo ${_current} | cut -d'-' -f2-)\"..."
 			_realm=${_current}
 			git switch --discard-changes master
