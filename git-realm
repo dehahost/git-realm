@@ -40,12 +40,12 @@ case "${1}" in
 
 		_realm=${_realm_name} #TODO: extend 'enter' sub-cmd so it's possible to enter already exising realm.
 
-		echo "Entering a new realm called \"$(echo ${_realm} | cut -d'-' -f2-)\"..."
+		echo "Entering a new realm called '$(echo ${_realm} | cut -d'-' -f2-)'..."
 		git switch --create ${_realm}
 ;; "leave")
 		# - Leave a realm branch only if user is currenly in it.
 		if [[ "${_current}" =~ ^realm-.*$ ]]; then
-			echo "Leaving $(echo ${_current} | cut -d'-' -f2-) realm..."
+			echo "Leaving realm called '$(echo ${_current} | cut -d'-' -f2-)'..."
 			git switch master
 		else
 			echo "You are not in a realm."
@@ -53,7 +53,7 @@ case "${1}" in
 ;; "dispose")
 		# - Delete a realm without traces
 		if [[ "${_current}" =~ ^realm-.*$ ]]; then
-			echo "Disposing current realm called \"$(echo ${_current} | cut -d'-' -f2-)\"..."
+			echo "Leaving and disposing currently used realm called '$(echo ${_current} | cut -d'-' -f2-)'..."
 			_realm=${_current}
 			git switch --discard-changes master
 			git branch --delete --force ${_realm}
