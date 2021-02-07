@@ -36,15 +36,15 @@ mkdir ~/bin/                                           # Create "homebin"
 ln -s -t ~/bin/ ${PWD}/git-realm/git-realm             # Symlink git-realm in
 ```
 
-Put following line into your `.bashrc`. It will insert "homebin" into PATH envvar and make `git-realm` available when you log in. Every time.
+Put following line into shell environment file like `.bashrc` or `.profile`. It will insert "homebin" into PATH envvar and make `git-realm` available when you log in. Every time.
 You can skip this and next step if you already have this configured.
 ```bash
 ( echo "$PATH" | grep "$HOME/bin" 2>&1 >/dev/null ) && [ -d "$HOME/bin" ] && export PATH="$PATH:$HOME/bin"
 ```
 
-Don't forget to *re-source* Bash environment:
+Don't forget to *re-source* your shell. Mine is Bash:
 ```bash
-source ~/.bashrc
+reset && source ~/.bashrc
 ```
 
 Enjoy it!
@@ -66,9 +66,9 @@ Switched to a new branch 'realm-citrus-narrative'
 ~/git/super-soft@realm-citrus-narrative$ # Do your work... :]
 ```
 
-Beware, git-realm create new realms nested. If you don't want that, there is a `--switch`:
+Beware, git-realm create new realms nested by default. If you don't want that, there is a `--master` for it:
 ```bash
-~/git/super-soft@realm-citrus-narrative$ git realm enter --switch
+~/git/super-soft@realm-citrus-narrative$ git realm enter --master
 Switching you to the master branch...
 Switched to branch 'master'
 Your branch is up to date with 'origin/master'.
@@ -77,7 +77,22 @@ Switched to a new branch 'realm-dilettante-bequeathed'
 ~/git/super-soft@realm-dilettante-bequeathed$ # Brand new one...
 ```
 
-You can leave your realm and get focused on other part of a repo:
+Don't like the name? Enter your very own:
+```bash
+~/git/super-soft@citrus-narrative$ git realm enter trusty-regex
+Creating a new realm called 'trusty-regex'...
+Switched to a new branch 'realm-trusty-regex'
+~/git/super-soft@trusty-regex$
+```
+
+You can switch between realms any time:
+```bash
+~/git/super-soft@citrus-narrative$ git realm enter citrus-narrative
+Entering realm called 'existing-one'...
+Switched to branch 'realm-existing-one'
+```
+
+Leave your realm and get focused on the other part in your repo:
 ```bash
 ~/git/super-soft@realm-citrus-narrative$ git realm leave
 Leaving 'citrus-narrative' realm...
@@ -100,13 +115,21 @@ Every realm can be listed out for better orientation:
 ```bash
 ~/git/super-soft@master$ git realm list
   doomsday-merciless
+  existing-one
+  trusty-regex
 ~/git/super-soft@master$
 ```
 
 ## Planned funcionalities
 
-- [ ] Ability to enter already existing realms by typing something like `git realm enter ballistic-future`
-- [ ] Possibility to add excerpts (short notes) to a realm and view them by a command (command design `git realm [<info/excerpt/note/sign> <show|set|scrap>]`)
-- [ ] Realm list will show that excerpts
+- __Simple__:
+  - [x] Ability to enter already existing realms by typing something like `git realm enter [realm-name]` [^1]
+  - [ ] Reword current realm - generated or typed - `git realm reword [realm-name]`
+- __Advanced ones__:
+  - [ ] Excerpts (short notes) to a realm and view them by a command (command design `git realm [<info/excerpt/note/sign> <show|set|scrap>]`) [^2]
+    - [ ] Realm list will show that excerpts
+  - [ ] Notify about new version (probably cURL will be used for this) [^3]
 
-_Side note: Excerpst can be pretty hard to implement as they require some kind of storage and sync - you really want that be everywhere else you work, right?. So there is a possibility I later drop those two last functionalities from the list._
+[^1]: When implementing this nice feature, another has been added: Ability to choose custom name for a new realm.
+[^2]: Creating additional file like `.gitrealm-notes` in repo root will be required to achieve this functionality.
+[^3]: This have to be non-disruptive feature, because I don't want my script to check and notify about a new version every execution time. So sub-command like `version-check` is the preffered way to go...
