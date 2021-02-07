@@ -5,25 +5,33 @@
 # | __ |  |  __ |__/ |___ |__| |    |\/|
 # |__] |  |     |  \ |___ |  | |___ |  |
 #
-_version="1.0.1"
+VER="1.1.0"
 # by dehahost
 ## 
 
 
-## Vars
-_current=$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/')
-_realm_name=$(echo realm $(shuf -n 2 /usr/share/dict/cracklib-small) | sed -e 's/ /-/g' -e "s/'s//g")
+## Constants
+CURRENT=$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/')
+REALM_GENERATED_NAME=$(echo realm $(shuf -n 2 /usr/share/dict/cracklib-small) | sed -e 's/ /-/g' -e "s/'s//g")
+REALM_BRANCHES=($(git branch | grep -oE "realm-.+$"))
 
 
 ## Functions
 # - Tabbed echo
 echot() { echo -e "\t$@"; }
 
+# - Realm branch matcher
+match-branch() {
+	for realm in ${REALM_BRANCHES[@]}; do
+		[ "${1}" = "${realm}" ] && return 0
+	done
+	return 1
+}
+
 
 ## Program section
-
-# - Are you in a Git repo?
-if [ "${_current}" = "" ]; then
+# - Are we in a Git repo?
+if [ "${CURRENT}" = "" ]; then
 	echo "You are not in a Git repository."
 	exit 1
 fi
@@ -32,44 +40,59 @@ fi
 case "${1}" in
    "enter")
 		# - Enter a new realm or a existing one
-		if [ "${2}" = "--switch" -a ! "${_current}" = "master" ]; then
+		if [ "${2}" = "--master" ] && [ "${CURRENT}" != "master" ]; then
 			# The --switch action
-			echo "Switching you to the master branch..."
+			echo "Switching to the master branch..."
 			git checkout master
+			shift
 		fi
 
-		_realm=${_realm_name} #TODO: extend 'enter' sub-cmd so it's possible to enter already exising realm.
-
-		echo "Entering a new realm called '$(echo ${_realm} | cut -d'-' -f2-)'..."
-		git checkout -b ${_realm}
+		# Match and use user typed realm name or use randomly generated one
+		# This allows user to choose custom two worlded realm name
+		if [ "${2}" != "" ] && [[ "${2}" =~ ^(realm-)?[a-z]+-[a-z]+$ ]]; then
+			[[ "${2}" =~ ^realm- ]] && realm="${2}" || realm="realm-${2}"
+			matched=$(match-branch "${realm}" && echo $?)
+		else
+			realm="${REALM_GENERATED_NAME}"
+			# TODO: Echo about typed realm name is replaced with generated one, because is in wrong format...
+		fi
+		
+		# Checkout existing realm branch or a new one
+		if [ ! -z ${matched} ] && [ ${matched} -eq 0 ]; then
+			echo "Entering realm called '$(echo ${realm} | cut -d'-' -f2-)'..."
+			git checkout ${realm}
+		else 
+			echo "Creating a new realm called '$(echo ${realm} | cut -d'-' -f2-)'..."
+			git checkout -b ${realm}
+		fi
 ;; "leave")
-		# - Leave a realm branch only if user is currenly in it.
-		if [[ "${_current}" =~ ^realm-.*$ ]]; then
-			echo "Leaving realm called '$(echo ${_current} | cut -d'-' -f2-)'..."
+		# - Only leave realm branch when user is currenly in it.
+		if [[ "${CURRENT}" =~ ^realm-.*$ ]]; then
+			echo "Leaving realm called '$(echo ${CURRENT} | cut -d'-' -f2-)'..."
 			git checkout master
 		else
-			echo "You are not in a realm."
+			echo "You are not in the realm."
 		fi
 ;; "dispose")
-		# - Delete a realm without traces
-		if [[ "${_current}" =~ ^realm-.*$ ]]; then
-			echo "Leaving and disposing currently used realm called '$(echo ${_current} | cut -d'-' -f2-)'..."
-			_realm=${_current}
+		# - Delete the realm without any traces
+		if [[ "${CURRENT}" =~ ^realm-.*$ ]]; then
+			echo "Leaving and disposing currently used realm called '$(echo ${CURRENT} | cut -d'-' -f2-)'..."
+			realm=${CURRENT}
 			git checkout -f master
-			git branch -D ${_realm}
+			git branch -D ${realm}
 		else
-			echo "You are not in a realm."
+			echo "You are not in the realm."
 		fi
 ;; "list")
 		# - List realm branches
-		git branch | grep -E "^(\*| ) realm-.+$" | sed -e 's/realm-//g'
+		echo "${REALM_BRANCHES[@]}" | sed -e 's/ /\n/g' -e 's/realm-//g'
 ;; "help")
 		# - Man-like help
 		echo  "git-realm - A precious Git branch extention."
 		echo  "Version ${_version}; By dehahost"
 		echo  ""
 		echo  "SYNOPSIS"
-		echot "git realm enter [--switch]"
+		echot "git realm enter [--master] [realm-name]"
 		echot "git realm (leave|dispose)"
 		echot "git realm list"
 		echot ""
@@ -78,18 +101,26 @@ case "${1}" in
 		echot "A simple Git extention for entering and leaving coding realms in Git."
 		echo  ""
 		echo  "OPTIONS"
-		echot "--switch"
-		echot "    Can be used with 'git realm enter' command. When it is used, entering to a new realm will be done from the master branch."
 		echo  ""
 		echot "dispose"
 		echot "    Switches user to the master branch and deletes previously used realm. Any uncommited changes will be discarded!"
 		echo  ""
 		echot "enter"
-		echot "    Creates and switches user to a new branch named 'realm' followed by two random words, the words are separated by a hyphen (ie. realm-octopus-retire)."
-		echot "    Entering to a new realm from existing one can be done."
+		echot "    Checkout to the branch named 'realm' followed by two random words, the words are separated by a dash (ie. realm-octopus-retire)."
+		echot "    New realm is based on currently active branch or realm."
+		echo  ""
+		echot "    [--master]"
+		echot "        When it is used, new realm will be based on the master branch."
+		echot "        Argument have to be typed after the 'enter' option."
+		echo  ""
+		echot "    [realm-name]"
+		echot "        Allows to enter existing realms or create new ones with a custom name."
+		echot "        Realm name must match following regex:"
+		echo  ""
+		echot "        ^(realm-)?[a-z]+-[a-z]+$"
 		echo  ""
 		echot "leave"
-		echot "    Leaves an active realm and returns to the master branch. This also applies to the nested realm as well."
+		echot "    Leaves active realm and returns to the master branch. This also applies to the nested realm as well."
 		echo  ""
 		echot "list"
 		echot "    List all available realms in the current Git repository."
