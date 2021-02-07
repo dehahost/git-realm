@@ -20,6 +20,10 @@ REALM_BRANCHES=($(git branch | grep -oE "realm-.+$"))
 # - Tabbed echo
 echot() { echo -e "\t$@"; }
 
+realm-name() {
+	echo ${1} | cut -d'-' -f2-
+}
+
 # - Realm branch matcher
 match-branch() {
 	for realm in ${REALM_BRANCHES[@]}; do
@@ -59,16 +63,16 @@ case "${1}" in
 		
 		# Checkout existing realm branch or a new one
 		if [ ! -z ${matched} ] && [ ${matched} -eq 0 ]; then
-			echo "Entering realm called '$(echo ${realm} | cut -d'-' -f2-)'..."
+			echo "Entering realm called '$(realm-name ${realm})'..."
 			git checkout ${realm}
 		else 
-			echo "Creating a new realm called '$(echo ${realm} | cut -d'-' -f2-)'..."
+			echo "Creating a new realm called '$(realm-name ${realm})'..."
 			git checkout -b ${realm}
 		fi
 ;; "leave")
 		# - Only leave realm branch when user is currenly in it.
 		if [[ "${CURRENT}" =~ ^realm-.*$ ]]; then
-			echo "Leaving realm called '$(echo ${CURRENT} | cut -d'-' -f2-)'..."
+			echo "Leaving realm called '$(realm-name ${CURRENT})'..."
 			git checkout master
 		else
 			echo "You are not in the realm."
@@ -76,7 +80,7 @@ case "${1}" in
 ;; "dispose")
 		# - Delete the realm without any traces
 		if [[ "${CURRENT}" =~ ^realm-.*$ ]]; then
-			echo "Leaving and disposing currently used realm called '$(echo ${CURRENT} | cut -d'-' -f2-)'..."
+			echo "Leaving and disposing currently used realm called '$(realm-name ${CURRENT})'..."
 			realm=${CURRENT}
 			git checkout -f master
 			git branch -D ${realm}
