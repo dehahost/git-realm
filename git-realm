@@ -7,7 +7,7 @@
 #
 VER="1.1.0"
 # by dehahost
-## 
+##
 
 
 ## Constants
@@ -60,12 +60,12 @@ case "${1}" in
 			realm="${REALM_GENERATED_NAME}"
 			# TODO: Echo about typed realm name is replaced with generated one, because is in wrong format...
 		fi
-		
+
 		# Checkout existing realm branch or a new one
 		if [ ! -z ${matched} ] && [ ${matched} -eq 0 ]; then
 			echo "Entering realm called '$(realm-name ${realm})'..."
 			git checkout ${realm}
-		else 
+		else
 			echo "Creating a new realm called '$(realm-name ${realm})'..."
 			git checkout -b ${realm}
 		fi
@@ -87,18 +87,34 @@ case "${1}" in
 		else
 			echo "You are not in the realm."
 		fi
+;; "reword")
+		# - Rename current realm
+		if [[ "${CURRENT}" =~ ^realm-.*$ ]]; then
+			# Allow user to enter new realm name
+			if [[ "${2}" =~ ^(realm-)?[a-z]+-[a-z]+$ ]]; then
+				[[ "${2}" =~ ^realm- ]] && realm="${2}" || realm="realm-${2}"
+			else
+				realm=${REALM_GENERATED_NAME}
+			fi
+
+			echo "Rewording '$(realm-name ${CURRENT})' to '$(realm-name ${realm})'..."
+			git branch -M ${CURRENT} ${realm}
+		else
+			echo "You are not in the realm."
+		fi
 ;; "list")
 		# - List realm branches
 		echo "${REALM_BRANCHES[@]}" | sed -e 's/ /\n/g' -e 's/realm-//g'
 ;; "help")
 		# - Man-like help
 		echo  "git-realm - A precious Git branch extention."
-		echo  "Version ${_version}; By dehahost"
+		echo  "Version ${VER}; By dehahost"
 		echo  ""
 		echo  "SYNOPSIS"
-		echot "git realm enter [--master] [realm-name]"
-		echot "git realm (leave|dispose)"
-		echot "git realm list"
+		echot "git-realm enter [--master] [realm-name]"
+		echot "git-realm reword [realm-name]"
+		echot "git-realm (leave|dispose)"
+		echot "git-realm list"
 		echot ""
 		echo  ""
 		echo  "DESCRIPTION"
@@ -119,15 +135,30 @@ case "${1}" in
 		echo  ""
 		echot "    [realm-name]"
 		echot "        Allows to enter existing realms or create new ones with a custom name."
-		echot "        Realm name must match following regex:"
-		echo  ""
-		echot "        ^(realm-)?[a-z]+-[a-z]+$"
+		echot "        See the NAMING CONVENTIONS section to learn more."
 		echo  ""
 		echot "leave"
 		echot "    Leaves active realm and returns to the master branch. This also applies to the nested realm as well."
 		echo  ""
 		echot "list"
-		echot "    List all available realms in the current Git repository."
+		echot "    Lists all available realms in the current Git repository."
+		echo  ""
+		echot "reword"
+		echot "    Renames currently used realm to a randomly choosed one."
+		echo  ""
+		echot "    [realm-name]"
+		echot "         Allows to enter desired realm name."
+		echot "         See the NAMING CONVENTIONS section to learn more."
+		echo  ""
+		echo  "NAMING CONVENTIONS"
+		echo  ""
+		echot "Realm name"
+		echot "    Realm name MUST consists form a prefix (word 'realm') and two words."
+		echot "    Those three words MUST be separated by a dash ('-')."
+		echot "    Two words after a prefix CAN be manually entered by a user or anoter script or program. Two random words will be used by default."
+		echo  ""
+		echot "    This can be converted into a simple regular expression:"
+		echot "      ^(realm-)?[a-z]+-[a-z]+$"
 ;;	*)
 		echo "Wrong command. Type 'git realm help' for help."
 esac
