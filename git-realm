@@ -9,11 +9,15 @@ VER="1.1.0"
 # by dehahost
 ##
 
+## Config
+SEP="-"
+
 
 ## Constants
-CURRENT=$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/')
-REALM_GENERATED_NAME=$(echo realm $(shuf -n 2 /usr/share/dict/cracklib-small) | sed -e 's/ /-/g' -e "s/'s//g")
-REALM_BRANCHES=($(git branch | grep -oE "realm-.+$"))
+CURRENT=$(git branch 2> /dev/null | sed -e '/^[^*]/d; s/\* \(.*\)/\1/')
+REALM_PREFIX="realm${SEP}"
+REALM_GENERATED_NAME="${REALM_PREFIX}$(echo -n $(shuf -n 2 /usr/share/dict/cracklib-small) | sed -e "s/ /-/g; s/'s//g")"
+REALM_BRANCHES=($(git branch | grep -oE "${REALM_PREFIX}.+$"))
 
 
 ## Functions
@@ -21,7 +25,7 @@ REALM_BRANCHES=($(git branch | grep -oE "realm-.+$"))
 echot() { echo -e "\t$@"; }
 
 realm-name() {
-	echo ${1} | cut -d'-' -f2-
+	echo ${1#*${SEP}}
 }
 
 # - Realm branch matcher
@@ -53,8 +57,8 @@ case "${1}" in
 
 		# Match and use user typed realm name or use randomly generated one
 		# This allows user to choose custom two worlded realm name
-		if [ "${2}" != "" ] && [[ "${2}" =~ ^(realm-)?[a-z]+-[a-z]+$ ]]; then
-			[[ "${2}" =~ ^realm- ]] && realm="${2}" || realm="realm-${2}"
+		if [ "${2}" != "" ] && [[ "${2}" =~ ^(${REALM_PREFIX})?[a-z]+-[a-z]+$ ]]; then
+			[[ "${2}" =~ ^${REALM_PREFIX} ]] && realm="${2}" || realm="${REALM_PREFIX}${2}"
 			matched=$(match-branch "${realm}" && echo $?)
 		else
 			realm="${REALM_GENERATED_NAME}"
@@ -71,7 +75,7 @@ case "${1}" in
 		fi
 ;; "leave")
 		# - Only leave realm branch when user is currenly in it.
-		if [[ "${CURRENT}" =~ ^realm-.*$ ]]; then
+		if [[ "${CURRENT}" =~ ^${REALM_PREFIX}.*$ ]]; then
 			echo "Leaving realm called '$(realm-name ${CURRENT})'..."
 			git checkout master
 		else
@@ -79,7 +83,7 @@ case "${1}" in
 		fi
 ;; "dispose")
 		# - Delete the realm without any traces
-		if [[ "${CURRENT}" =~ ^realm-.*$ ]]; then
+		if [[ "${CURRENT}" =~ ^${REALM_PREFIX}.*$ ]]; then
 			echo "Leaving and disposing currently used realm called '$(realm-name ${CURRENT})'..."
 			realm=${CURRENT}
 			git checkout -f master
@@ -89,10 +93,10 @@ case "${1}" in
 		fi
 ;; "reword")
 		# - Rename current realm
-		if [[ "${CURRENT}" =~ ^realm-.*$ ]]; then
+		if [[ "${CURRENT}" =~ ^${REALM_PREFIX}.*$ ]]; then
 			# Allow user to enter new realm name
-			if [[ "${2}" =~ ^(realm-)?[a-z]+-[a-z]+$ ]]; then
-				[[ "${2}" =~ ^realm- ]] && realm="${2}" || realm="realm-${2}"
+			if [[ "${2}" =~ ^(${REALM_PREFIX})?[a-z]+-[a-z]+$ ]]; then
+				[[ "${2}" =~ ^${REALM_PREFIX} ]] && realm="${2}" || realm="${REALM_PREFIX}${2}"
 			else
 				realm=${REALM_GENERATED_NAME}
 			fi
@@ -104,7 +108,7 @@ case "${1}" in
 		fi
 ;; "list")
 		# - List realm branches
-		echo "${REALM_BRANCHES[@]}" | sed -e 's/ /\n/g' -e 's/realm-//g'
+		echo "${REALM_BRANCHES[@]}" | sed -e "s/ /\n/g; s/${REALM_PREFIX%${SEP}*}\\${SEP}//g"
 ;; "help")
 		# - Man-like help
 		echo  "git-realm - A precious Git branch extention."
@@ -126,7 +130,7 @@ case "${1}" in
 		echot "    Switches user to the master branch and deletes previously used realm. Any uncommited changes will be discarded!"
 		echo  ""
 		echot "enter"
-		echot "    Checkout to the branch named 'realm' followed by two random words, the words are separated by a dash (ie. realm-octopus-retire)."
+		echot "    Checkout to the branch named '${REALM_PREFIX}' followed by two random words (ie. ${REALM_GENERATED_NAME})."
 		echot "    New realm is based on currently active branch or realm."
 		echo  ""
 		echot "    [--master]"
@@ -154,11 +158,11 @@ case "${1}" in
 		echo  ""
 		echot "Realm name"
 		echot "    Realm name MUST consists form a prefix (word 'realm') and two words."
-		echot "    Those three words MUST be separated by a dash ('-')."
+		echot "    Those three words MUST be separated by '${SEP}'."
 		echot "    Two words after a prefix CAN be manually entered by a user or anoter script or program. Two random words will be used by default."
 		echo  ""
 		echot "    This can be converted into a simple regular expression:"
-		echot "      ^(realm-)?[a-z]+-[a-z]+$"
+		echot "      ^(${REALM_PREFIX})?[a-z]+-[a-z]+$"
 ;;	*)
 		echo "Wrong command. Type 'git realm help' for help."
 esac
