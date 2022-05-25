@@ -22,147 +22,150 @@ REALM_BRANCHES=($(git branch | grep -oE "${REALM_PREFIX}.+$"))
 
 ## Functions
 # - Tabbed echo
-echot() { echo -e "\t$@"; }
+echot() { echo -e "\t${@}"; }
 
 realm-name() {
-	echo ${1#*${SEP}}
+    echo ${1#*${SEP}}
 }
 
 # - Realm branch matcher
 match-branch() {
-	for realm in ${REALM_BRANCHES[@]}; do
-		[ "${1}" = "${realm}" ] && return 0
-	done
-	return 1
+    for realm in ${REALM_BRANCHES[@]}; do
+        [[ ${1} == "${realm}" ]] && return 0
+    done
+    return 1
 }
 
 
 ## Program section
 # - Are we in a Git repo?
-if [ "${CURRENT}" = "" ]; then
-	echo "You are not in a Git repository."
-	exit 1
+if [[ ${CURRENT} == "" ]]; then
+    echo "You are not in a Git repository."
+    exit 1
 fi
 
 # - Let's realm!
-case "${1}" in
-   "enter")
-		# - Enter a new realm or a existing one
-		if [ "${2}" = "--master" ] && [ "${CURRENT}" != "master" ]; then
-			# The --switch action
-			echo "Switching to the master branch..."
-			git checkout master
-			shift
-		fi
+case ${1} in
+    "enter")
+        # - Enter a new realm or a existing one
+        if [[ ${2} == "--master" && ${CURRENT} != "master" ]]; then
+            # The --switch action
+            echo "Switching to the master branch..."
+            git checkout master
+            shift
+        fi
 
-		# Match and use user typed realm name or use randomly generated one
-		# This allows user to choose custom two worlded realm name
-		if [ "${2}" != "" ] && [[ "${2}" =~ ^(${REALM_PREFIX})?[a-z]+-[a-z]+$ ]]; then
-			[[ "${2}" =~ ^${REALM_PREFIX} ]] && realm="${2}" || realm="${REALM_PREFIX}${2}"
-			matched=$(match-branch "${realm}" && echo $?)
-		else
-			realm="${REALM_GENERATED_NAME}"
-			# TODO: Echo about typed realm name is replaced with generated one, because is in wrong format...
-		fi
+        # Match and use user typed realm name or use randomly generated one
+        # This allows user to choose custom two worlded realm name
+        # TODO: This needs rewrite imho - BASH_REMATCH could be used, maybe a function (because of the reword arg)
+        if [[ ${2} =~ ^(${REALM_PREFIX})?[a-z0-9]+-[a-z0-9]+$ ]]; then
+            [[ ${2} =~ ^${REALM_PREFIX} ]] && realm="${2}" || realm="${REALM_PREFIX}${2}"
+            matched=$(match-branch "${realm}" && echo $?)
+        else
+            realm="${REALM_GENERATED_NAME}"
+            # TODO: Echo about typed realm name is replaced with generated one, because is in wrong format...
+        fi
 
-		# Checkout existing realm branch or a new one
-		if [ ! -z ${matched} ] && [ ${matched} -eq 0 ]; then
-			echo "Entering realm called '$(realm-name ${realm})'..."
-			git checkout ${realm}
-		else
-			echo "Creating a new realm called '$(realm-name ${realm})'..."
-			git checkout -b ${realm}
-		fi
-;; "leave")
-		# - Only leave realm branch when user is currenly in it.
-		if [[ "${CURRENT}" =~ ^${REALM_PREFIX}.*$ ]]; then
-			echo "Leaving realm called '$(realm-name ${CURRENT})'..."
-			git checkout master
-		else
-			echo "You are not in the realm."
-		fi
-;; "dispose")
-		# - Delete the realm without any traces
-		if [[ "${CURRENT}" =~ ^${REALM_PREFIX}.*$ ]]; then
-			echo "Leaving and disposing currently used realm called '$(realm-name ${CURRENT})'..."
-			realm=${CURRENT}
-			git checkout -f master
-			git branch -D ${realm}
-		else
-			echo "You are not in the realm."
-		fi
-;; "reword")
-		# - Rename current realm
-		if [[ "${CURRENT}" =~ ^${REALM_PREFIX}.*$ ]]; then
-			# Allow user to enter new realm name
-			if [[ "${2}" =~ ^(${REALM_PREFIX})?[a-z]+-[a-z]+$ ]]; then
-				[[ "${2}" =~ ^${REALM_PREFIX} ]] && realm="${2}" || realm="${REALM_PREFIX}${2}"
-			else
-				realm=${REALM_GENERATED_NAME}
-			fi
+        # Checkout existing realm branch or a new one
+        if [[ ! -z ${matched} && ${matched} -eq 0 ]]; then
+            echo "Entering realm called '$(realm-name ${realm})'..."
+            git checkout ${realm}
+        else
+            echo "Creating a new realm called '$(realm-name ${realm})'..."
+            git checkout -b ${realm}
+        fi
+ ;; "leave")
+        # - Only leave realm branch when user is currenly in it.
+        if [[ ${CURRENT} =~ ^${REALM_PREFIX}.*$ ]]; then
+            echo "Leaving realm called '$(realm-name ${CURRENT})'..."
+            git checkout master
+        else
+            echo "You are not in the realm."
+        fi
+ ;; "dispose")
+        # - Delete the realm without any traces
+        if [[ ${CURRENT} =~ ^${REALM_PREFIX}.*$ ]]; then
+            echo "Leaving and disposing currently used realm called '$(realm-name ${CURRENT})'..."
+            realm=${CURRENT}
+            git checkout -f master
+            git branch -D ${realm}
+        else
+            echo "You are not in the realm."
+        fi
+ ;; "reword")
+        # - Rename current realm
+        if [[ ${CURRENT} =~ ^${REALM_PREFIX}.*$ ]]; then
+            # Allow user to enter new realm name
+            # TODO: Do the same as in TODO in "enter" section
+            if [[ ${2} =~ ^(${REALM_PREFIX})?[a-z0-9]+-[a-z0-9]+$ ]]; then
+                [[ ${2} =~ ^${REALM_PREFIX} ]] && realm="${2}" || realm="${REALM_PREFIX}${2}"
+            else
+                realm=${REALM_GENERATED_NAME}
+            fi
 
-			echo "Rewording '$(realm-name ${CURRENT})' to '$(realm-name ${realm})'..."
-			git branch -M ${CURRENT} ${realm}
-		else
-			echo "You are not in the realm."
-		fi
-;; "list")
-		# - List realm branches
-		echo "${REALM_BRANCHES[@]}" | sed -e "s/ /\n/g; s/${REALM_PREFIX%${SEP}*}\\${SEP}//g"
-;; "help")
-		# - Man-like help
-		echo  "git-realm - A precious Git branch extention."
-		echo  "Version ${VER}; By dehahost"
-		echo  ""
-		echo  "SYNOPSIS"
-		echot "git-realm enter [--master] [realm-name]"
-		echot "git-realm reword [realm-name]"
-		echot "git-realm (leave|dispose)"
-		echot "git-realm list"
-		echot ""
-		echo  ""
-		echo  "DESCRIPTION"
-		echot "A simple Git extention for entering and leaving coding realms in Git."
-		echo  ""
-		echo  "OPTIONS"
-		echo  ""
-		echot "dispose"
-		echot "    Switches user to the master branch and deletes previously used realm. Any uncommited changes will be discarded!"
-		echo  ""
-		echot "enter"
-		echot "    Checkout to the branch named '${REALM_PREFIX}' followed by two random words (ie. ${REALM_GENERATED_NAME})."
-		echot "    New realm is based on currently active branch or realm."
-		echo  ""
-		echot "    [--master]"
-		echot "        When it is used, new realm will be based on the master branch."
-		echot "        Argument have to be typed after the 'enter' option."
-		echo  ""
-		echot "    [realm-name]"
-		echot "        Allows to enter existing realms or create new ones with a custom name."
-		echot "        See the NAMING CONVENTIONS section to learn more."
-		echo  ""
-		echot "leave"
-		echot "    Leaves active realm and returns to the master branch. This also applies to the nested realm as well."
-		echo  ""
-		echot "list"
-		echot "    Lists all available realms in the current Git repository."
-		echo  ""
-		echot "reword"
-		echot "    Renames currently used realm to a randomly choosed one."
-		echo  ""
-		echot "    [realm-name]"
-		echot "         Allows to enter desired realm name."
-		echot "         See the NAMING CONVENTIONS section to learn more."
-		echo  ""
-		echo  "NAMING CONVENTIONS"
-		echo  ""
-		echot "Realm name"
-		echot "    Realm name MUST consists form a prefix (word 'realm') and two words."
-		echot "    Those three words MUST be separated by '${SEP}'."
-		echot "    Two words after a prefix CAN be manually entered by a user or anoter script or program. Two random words will be used by default."
-		echo  ""
-		echot "    This can be converted into a simple regular expression:"
-		echot "      ^(${REALM_PREFIX})?[a-z]+-[a-z]+$"
-;;	*)
-		echo "Wrong command. Type 'git realm help' for help."
+            echo "Rewording '$(realm-name ${CURRENT})' to '$(realm-name ${realm})'..."
+            git branch -M ${CURRENT} ${realm}
+        else
+            echo "You are not in the realm."
+        fi
+ ;; "list")
+        # - List realm branches
+        echo "${REALM_BRANCHES[@]}" | sed -e "s/ /\n/g; s/${REALM_PREFIX%${SEP}*}\\${SEP}//g"
+ ;; "help")
+        # - Man-like help
+        # TODO: Consider cat
+        echo  "git-realm - A precious Git branch extention."
+        echo  "Version ${VER}; By dehahost"
+        echo  ""
+        echo  "SYNOPSIS"
+        echot "git-realm enter [--master] [realm-name]"
+        echot "git-realm reword [realm-name]"
+        echot "git-realm (leave|dispose)"
+        echot "git-realm list"
+        echot ""
+        echo  ""
+        echo  "DESCRIPTION"
+        echot "A simple Git extention for entering and leaving coding realms in Git."
+        echo  ""
+        echo  "OPTIONS"
+        echo  ""
+        echot "dispose"
+        echot "    Switches user to the master branch and deletes previously used realm. Any uncommited changes will be discarded!"
+        echo  ""
+        echot "enter"
+        echot "    Checkout to the branch named '${REALM_PREFIX}' followed by two random words (ie. ${REALM_GENERATED_NAME})."
+        echot "    New realm is based on currently active branch or realm."
+        echo  ""
+        echot "    [--master]"
+        echot "        When it is used, new realm will be based on the master branch."
+        echot "        Argument have to be typed after the 'enter' option."
+        echo  ""
+        echot "    [realm-name]"
+        echot "        Allows to enter existing realms or create new ones with a custom name."
+        echot "        See the NAMING CONVENTIONS section to learn more."
+        echo  ""
+        echot "leave"
+        echot "    Leaves active realm and returns to the master branch. This also applies to the nested realm as well."
+        echo  ""
+        echot "list"
+        echot "    Lists all available realms in the current Git repository."
+        echo  ""
+        echot "reword"
+        echot "    Renames currently used realm to a randomly choosed one."
+        echo  ""
+        echot "    [realm-name]"
+        echot "         Allows to enter desired realm name."
+        echot "         See the NAMING CONVENTIONS section to learn more."
+        echo  ""
+        echo  "NAMING CONVENTIONS"
+        echo  ""
+        echot "Realm name"
+        echot "    Realm name MUST consists form a prefix (word 'realm') and two words."
+        echot "    Those three words MUST be separated by '${SEP}'."
+        echot "    Two words after a prefix CAN be manually entered by a user or anoter script or program. Two random words will be used by default."
+        echo  ""
+        echot "    This can be converted into a simple regular expression:"
+        echot "      ^(${REALM_PREFIX})?[a-z0-9]+-[a-z0-9]+$"
+ ;; *)
+        echo "Wrong command. Type 'git realm help' for help."
 esac
