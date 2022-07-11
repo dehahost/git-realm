@@ -10,25 +10,38 @@ VER="1.2.0"
 ##
 
 ## Config
+
 # - Separator between prefix and realm name
 #   Default is "-"
-SEP="-"
+SEPARATOR="-"
 # - Common branch name
 #   Could be "main", default is "master"
 COMMON_BRANCH="master"
 
 
-## Constants
-CURRENT=$(git branch 2> /dev/null | sed -e '/^[^*]/d; s/\* \(.*\)/\1/')
-REALM_PREFIX="realm${SEP}"
-REALM_GENERATED_NAME="${REALM_PREFIX}$(echo -n $(shuf -n 2 /usr/share/dict/cracklib-small) | sed -e "s/ /-/g; s/'s//g")"
-REALM_BRANCHES=($(git branch | grep -oE "${REALM_PREFIX}[^ ]+"))
-
-
 ## Functions
+
+# - Load realm.* key-vals from git config
+load-from-git-config() {
+    kv=( $(git config -l | grep -E '^realm\..+$') )
+    for v in "${kv[@]}"; do
+        _k=$(echo ${v} | sed -E 's/realm\.(\w+)=.+/\1/')
+        _v=$(echo ${v} | sed -E 's/realm\.\w+=(.+)/\1/')
+        set-conf ${_k} ${_v}
+    done
+}
+
+# - Set configuration
+set-conf() {
+    case ${1} in
+        "separator")     SEPARATOR=${2};;
+        "common-branch") COMMON_BRANCH=${2};;
+    esac
+}
+
 # - Realm name formatter
 realm-name() {
-    [[ ${1} =~ ^${REALM_PREFIX} ]] && echo  ${1#*${SEP}} || echo ${1}
+    [[ ${1} =~ ^${REALM_PREFIX} ]] && echo  ${1#*${SEPARATOR}} || echo ${1}
 }
 
 # - Realm branch name formatter
@@ -46,9 +59,21 @@ realm-exists() {
 }
 
 
+## Configure with Git config
+load-from-git-config
+
+
+## Constants
+CURRENT_BRANCH=$(git branch 2> /dev/null | sed -e '/^[^*]/d; s/\* \(.*\)/\1/')
+
+REALM_PREFIX="realm${SEPARATOR}"
+REALM_GENERATED_NAME="${REALM_PREFIX}$(echo -n $(shuf -n 2 /usr/share/dict/cracklib-small) | sed -e "s/ /-/g; s/'s//g")"
+REALM_BRANCHES=($(git branch | grep -oE "${REALM_PREFIX}[^ ]+"))
+
+
 ## Program section
 # - Are we in a Git repo?
-if [[ ${CURRENT} == "" ]]; then
+if [[ ${CURRENT_BRANCH} == "" ]]; then
     echo "You are not in a Git repository."
     exit 1
 fi
@@ -56,7 +81,7 @@ fi
 case ${1} in
     "enter")
         # - Enter a new realm or a existing one
-        if [[ ${2} == "--master" && ${CURRENT} != ${COMMON_BRANCH} ]]; then
+        if [[ ${2} == "--master" && ${CURRENT_BRANCH} != ${COMMON_BRANCH} ]]; then
             # The --switch action
             echo "Switching to the ${COMMON_BRANCH} branch..."
             git checkout ${COMMON_BRANCH}
@@ -72,7 +97,7 @@ case ${1} in
         fi
 
         # Skip if alredy in wanted realm
-        if [[ ${realm} == ${CURRENT} ]]; then
+        if [[ ${realm} == ${CURRENT_BRANCH} ]]; then
             echo "Already in realm '$(realm-name ${realm})'"
             exit
         fi
@@ -89,19 +114,19 @@ case ${1} in
 
  ;; "leave")
         # Only leave realm branch when user is currenly in it.
-        if [[ ! ${CURRENT} =~ ^${REALM_PREFIX}.*$ ]]; then
+        if [[ ! ${CURRENT_BRANCH} =~ ^${REALM_PREFIX}.*$ ]]; then
             echo "You are not in the realm."
             exit 1
         fi
 
-        echo "Leaving realm called '$(realm-name ${CURRENT})'..."
+        echo "Leaving realm called '$(realm-name ${CURRENT_BRANCH})'..."
         git checkout ${COMMON_BRANCH}
 
  ;; "dispose")
         # - Delete the realm without any traces
 
         # Support disposing realm by inputed name
-        if [[ ${2} != "" && ${2} != ${CURRENT} ]]; then
+        if [[ ${2} != "" && ${2} != ${CURRENT_BRANCH} ]]; then
             if ! realm-exists ${2}; then
                 echo "Entered realm '$(realm-name ${2})' do not exist!"
                 exit 1
@@ -112,19 +137,19 @@ case ${1} in
             exit
         fi
 
-        if [[ ! ${CURRENT} =~ ^${REALM_PREFIX}.*$ ]]; then
+        if [[ ! ${CURRENT_BRANCH} =~ ^${REALM_PREFIX}.*$ ]]; then
             echo "You are not in the realm."
             exit 1
         fi
 
-        echo "Leaving and disposing currently used realm called '$(realm-name ${CURRENT})'..."
+        echo "Leaving and disposing currently used realm called '$(realm-name ${CURRENT_BRANCH})'..."
         git checkout -f ${COMMON_BRANCH}
-        git branch -D ${CURRENT}
+        git branch -D ${CURRENT_BRANCH}
 
  ;; "reword")
         # - Rename current realm
 
-        if [[ ! ${CURRENT} =~ ^${REALM_PREFIX}.*$ ]]; then
+        if [[ ! ${CURRENT_BRANCH} =~ ^${REALM_PREFIX}.*$ ]]; then
             echo "You are not in the realm."
             exit 1
         fi
@@ -143,11 +168,11 @@ case ${1} in
         fi
 
         echo "Rewording to '$(realm-name ${realm})'..."
-        git branch -M ${CURRENT} ${realm}
+        git branch -M ${CURRENT_BRANCH} ${realm}
 
  ;; "list")
         # - List realm branches
-        echo "${REALM_BRANCHES[@]}" | sed -e "s/ /\n/g; s/${REALM_PREFIX%${SEP}*}\\${SEP}//g"
+        echo "${REALM_BRANCHES[@]}" | sed -e "s/ /\n/g; s/${REALM_PREFIX%${SEPARATOR}*}\\${SEPARATOR}//g"
 
  ;; "help")
         # - Man-like help
@@ -199,7 +224,7 @@ OPTIONS
 NAMING CONVENTIONS
     Realm name
         Realm name MUST consists form a prefix (word 'realm') and two words.
-        Those three words MUST be separated by '${SEP}'.
+        Those three words MUST be separated by '${SEPARATOR}'.
         Two words after a prefix CAN be manually entered by a user or anoter script or program. Two random words will be used by default.
 
         This can be converted into a simple regular expression:
