@@ -67,7 +67,7 @@ case ${1} in
 
         # Match and use user typed realm name or use randomly generated one
         # This allows user to choose custom two worlded realm name
-        if [[ ${2} =~ ^(${REALM_PREFIX})?[a-z0-9]+-[a-z0-9]+$ ]]; then
+        if [[ ${2} =~ ^(${REALM_PREFIX})?[a-zA-Z0-9]+-[a-zA-Z0-9]+$ ]]; then
             realm=$(realm-branch ${2})
         fi
 
@@ -132,7 +132,7 @@ case ${1} in
         realm=${REALM_GENERATED_NAME}
 
         # Allow user to enter new realm name
-        if [[ ${2} =~ ^(${REALM_PREFIX})?[a-z0-9]+-[a-z0-9]+$ ]]; then
+        if [[ ${2} =~ ^(${REALM_PREFIX})?[a-zA-Z0-9]+-[a-zA-Z0-9]+$ ]]; then
             realm=$(realm-branch ${2})
         fi
 
@@ -203,7 +203,7 @@ NAMING CONVENTIONS
         Two words after a prefix CAN be manually entered by a user or anoter script or program. Two random words will be used by default.
 
         This can be converted into a simple regular expression:
-            ^(${REALM_PREFIX})?[a-z0-9]+-[a-z0-9]+$
+            ^(${REALM_PREFIX})?[a-zA-Z0-9]+-[a-zA-Z0-9]+$
 
 EOF
 
