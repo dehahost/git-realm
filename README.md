@@ -50,7 +50,7 @@ You can skip this and next step if you already have this configured.
 ( echo "$PATH" | grep "$HOME/bin" 2>&1 >/dev/null ) && [ -d "$HOME/bin" ] && export PATH="$PATH:$HOME/bin"
 ```
 
-Do not forget to *re-source* your shell like so ...
+Do not forget to _re-source_ your shell like so ...
 
 ```bash
 reset && source ~/.bashrc
@@ -125,7 +125,7 @@ Your branch is up to date with 'origin/master'.
 ```
 
 You can easily dispose your realm and everything with it:
-*Think twice before doing it!*
+_Think twice before doing it!_
 
 ```bash
 ~/git/super-soft@realm-memory-leaks$ git realm dispose
@@ -145,11 +145,19 @@ Every realm can be listed out for better orientation:
 ~/git/super-soft@master$
 ```
 
+## Configure
+
+You can configure git-realm with Git config:
+
+- `realm.separator` _(default: -)_ Separator character between _"realm"_ and realm name - ie. "realm-routine-stray" or "realm/gastro-tour"
+- `realm.common-branch` _(default: master)_ Common Git branch - could be _main_, some prefers _master_.
+
 ## Planned funcionalities
 
 - __Simple__:
   - [x] Ability to enter already existing realms by typing something like `git realm enter [realm-name]` [^1]
   - [x] Reword current realm - generated or typed - `git realm reword [realm-name]`
+  - [x] Configuration support
 - __Advanced ones__:
   - [ ] Excerpts (short notes) to a realm and view them by a command (command design `git realm [<info/excerpt/note/sign> <show|set|scrap>]`) [^2]
     - [ ] Realm list will show that excerpts
@@ -158,3 +166,11 @@ Every realm can be listed out for better orientation:
 [^1]: When implementing this nice feature, another was added: Ability to choose custom name for a new realm.
 [^2]: Could be achieved with `gitrealm-notes` file in `.git` dir. Only downside of this is impossibility to sync it, which I see as a minor problem rn.
 [^3]: This have to be non-disruptive feature, because I don't want my script to check and notify about a new version every time. So sub-command like `version-check` is the preffered way to go...
+
+## Dependant commands
+
+- bash _(based upon)_
+- git _(manipulated with)_
+- coreutils - cat, shuf
+- grep
+- sed
