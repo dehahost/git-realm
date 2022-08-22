@@ -5,7 +5,7 @@
 # | __ |  |  __ |__/ |___ |__| |    |\/|
 # |__] |  |     |  \ |___ |  | |___ |  |
 #
-VER="1.3.0"
+VER="1.3.1"
 # by dehahost (https://github.com/dehahost)
 ##
 
@@ -41,7 +41,7 @@ set-conf() {
 
 # - Realm name formatter
 realm-name() {
-    [[ ${1} =~ ^${REALM_PREFIX} ]] && echo  ${1#*${SEPARATOR}} || echo ${1}
+    [[ ${1} =~ ^${REALM_PREFIX} ]] && echo ${1#*${SEPARATOR}} || echo ${1}
 }
 
 # - Realm branch name formatter
@@ -67,8 +67,8 @@ load-from-git-config
 CURRENT_BRANCH=$(git branch 2> /dev/null | sed -e '/^[^*]/d; s/\* \(.*\)/\1/')
 
 REALM_PREFIX="realm${SEPARATOR}"
-REALM_GENERATED_NAME="${REALM_PREFIX}$(echo -n $(shuf -n 2 /usr/share/dict/cracklib-small) | sed -e "s/ /-/g; s/'s//g")"
-REALM_BRANCHES=($(git branch | grep -oE "${REALM_PREFIX}[^ ]+"))
+REALM_GENERATED_NAME="${REALM_PREFIX}$(echo -n $(shuf -n2 /usr/share/dict/cracklib-small) | sed -E "s/['\.&+\\-]//g; s/\s/-/g")"
+REALM_BRANCHES=( $(git branch | grep -oE "${REALM_PREFIX}[^ ]+") )
 
 
 ## Program section
@@ -80,15 +80,16 @@ fi
 
 case ${1} in
     "enter")
+        realm=${REALM_GENERATED_NAME}
+        tail=""
+
         # - Enter a new realm or a existing one
         if [[ ${2} == "--master" && ${CURRENT_BRANCH} != ${COMMON_BRANCH} ]]; then
             # The --switch action
-            echo "Switching to the ${COMMON_BRANCH} branch..."
-            git checkout ${COMMON_BRANCH}
+            echo "Going to checkout from ${COMMON_BRANCH} branch."
+            tail=${COMMON_BRANCH}
             shift
         fi
-
-        realm="${REALM_GENERATED_NAME}"
 
         # Match and use user typed realm name or use randomly generated one
         # This allows user to choose custom two worlded realm name
@@ -105,12 +106,12 @@ case ${1} in
         # Checkout existing realm branch or a new one
         if realm-exists ${realm}; then
             echo "Entering realm called '$(realm-name ${realm})'..."
-            git checkout ${realm}
+            git checkout ${realm} ${tail}
             exit
         fi
 
         echo "Creating a new realm called '$(realm-name ${realm})'..."
-        git checkout -b ${realm}
+        git checkout -b ${realm} ${tail}
 
  ;; "leave")
         # Only leave realm branch when user is currenly in it.
