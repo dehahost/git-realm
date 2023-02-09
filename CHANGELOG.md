@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `--master` modifier of _enter_ command changed to `-c`
+
 ### Fixed
 
 - New realm names no longer contain special characters like `'`, `.`, `&` or `+`

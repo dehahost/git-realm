@@ -21,89 +21,105 @@ Install dictionary package `libcrack2`.
 
 ## Configuration
 
-You can configure git-realm with Git config:
+git-realm can be configured with Git config:
 
 - `realm.separator` _(default: -)_ Separator character between _"realm"_ and realm name - ie. "realm-decent-stray" or "realm/gastro-tour"
 - `realm.common-branch` _(default: master)_ Common Git branch - could be _main_, some prefers _master_, others _production_.
 
 ## Usage
 
-### Lising
+### Listing
 
 ```bash
-~/git/super-soft@master$ git realm list
-  doomsday-clock
-  memory-leaks
-~/git/super-soft@master$
+ ~/realm-test@master$ git realm list
+base-one
+decent-stray
 ```
 
 ### Entering realms
 
-**1**/ The easy way
+**1**/ The easy way\
+New realm is entered from _`HEAD`_.
 
 ```bash
-~/git/super-soft@master$ git realm enter
-Entering a new realm called 'citrus-narrative'...
-Switched to a new branch 'realm-citrus-narrative'
-~/git/super-soft@realm-citrus-narrative$
+ ~/realm-test@realm-base-one % git realm enter
+Creating a new realm called 'matrices-gaucherie'...
+Switched to a new branch 'realm-matrices-gaucherie'
+ ~/realm-test@realm-matrices-gaucherie %
+
+# * bb52534 (HEAD -> realm-matrices-gaucherie, realm-base-one) feat: Add hello.sh
+# * 1d483b6 chore: Update README.md
+# * 1d59365 (master) feat: Add README.md
 ```
 
 **2**/ From common branch
 
 ```bash
-~/git/super-soft@realm-citrus-narrative$ git realm enter --master
-Switching you to the master branch...
-Switched to branch 'master'
-Your branch is up to date with 'origin/master'.
-Entering a new realm called "dilettante-bequeathed"...
-Switched to a new branch 'realm-dilettante-bequeathed'
-~/git/super-soft@realm-dilettante-bequeathed$
+ ~/realm-test@realm-base-one % git realm enter -c
+Going to checkout from master branch.
+Creating a new realm called 'krause-propounded'...
+Switched to a new branch 'realm-krause-propounded'
+ ~/realm-test@realm-krause-propounded %
+
+# * bb52534 (realm-base-one) feat: Add hello.sh
+# * 1d483b6 chore: Update README.md
+# * 1d59365 (HEAD -> realm-krause-propounded, master) feat: Add README.md
 ```
 
 **3**/ With a custom name
 
 ```bash
-~/git/super-soft@realm-citrus-narrative$ git realm enter fix-bug3000
-Creating a new realm called 'fix-bug3000'...
-Switched to a new branch 'realm-fix-bug3000'
-~/git/super-soft@realm-fix-bug3000$
+ ~/realm-test@master % git realm enter BAU-30000
+Creating a new realm called 'BAU-30000'...
+Switched to a new branch 'realm-BAU-30000'
+ ~/realm-test@realm-BAU-30000 %
 ```
 
-### Rewording enterd realm
+### Rewording entered realm
 
 **1**/ New random name
 
 ```bash
-~/git/super-soft@realm-citrus-narrative$ git realm reword
-~/git/super-soft@realm-naiive-ninja$
+ ~/realm-test@realm-BAU-30000 % git realm reword
+Rewording to 'restrictively-melina'...
+ ~/realm-test@realm-restrictively-melina %
 ```
 
-**2**/ Desired name
+**2**/ Specific name
 
 ```bash
-~/git/super-soft@realm-naiive-ninja$ git realm reword memory-leaks
-~/git/super-soft@realm-memory-leaks$
+ ~/realm-test@realm-restrictively-melina % git realm reword GRLM-4
+Rewording to 'GRLM-4'...
+ ~/realm-test@realm-GRLM-4 %
 ```
 
 ### Leaving realms
 
 ```bash
-~/git/super-soft@realm-memory-leaks$ git realm leave
-Leaving 'memory-leaks' realm...
+ ~/realm-test@realm-GRLM-4 % git realm leave
+Leaving realm called 'GRLM-4'...
 Switched to branch 'master'
-Your branch is up to date with 'origin/master'.
-~/git/super-soft@master$
+ ~/realm-test@master %
 ```
 
 ### Disposing realms
 
+**1**/ Currently used realm
+
 ```bash
-~/git/super-soft@realm-memory-leaks$ git realm dispose
-Disposing current realm called 'memory-leaks'...
+ ~/realm-test@realm-GRLM-4 % git realm dispose
+Leaving and disposing currently used realm called 'GRLM-4'...
 Switched to branch 'master'
-Your branch is up to date with 'origin/master'.
-Deleted branch realm-memory-leaks (was 2c31ec3).
-~/git/super-soft@master$
+Deleted branch realm-GRLM-4 (was 1d59365).
+ ~/realm-test@master %
+```
+
+**2**/ Existing realm
+
+```bash
+ ~/tempie/realm-test@master % git realm dispose base-one
+Disposing realm called 'base-one'...
+Deleted branch realm-base-one (was bb52534).
 ```
 
 ## Planned features
@@ -112,6 +128,7 @@ Deleted branch realm-memory-leaks (was 2c31ec3).
 - [x] Reword current realm - generated or typed - `git realm reword [realm-name]`
 - [x] Configuration support
 - [ ] Merging realms into common branch (like Git-Flow)
+- [ ] Rewording without entering the realm
 
 ## Dependant commands
 
