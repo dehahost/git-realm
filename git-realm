@@ -5,7 +5,7 @@
 # | __ |  |  __ |__/ |___ |__| |    |\/|
 # |__] |  |     |  \ |___ |  | |___ |  |
 #
-VER="1.3.1"
+VER="2.0.0"
 # by dehahost (https://github.com/dehahost)
 ##
 
@@ -73,7 +73,7 @@ REALM_BRANCHES=( $(git branch | grep -oE "${REALM_PREFIX}[^ ]+") )
 
 ## Program section
 # - Are we in a Git repo?
-if [[ ${CURRENT_BRANCH} == "" ]]; then
+if [[ ${CURRENT_BRANCH} == "" && ${1} != "help" ]]; then
     echo "You are not in a Git repository."
     exit 1
 fi
@@ -84,8 +84,7 @@ case ${1} in
         tail=""
 
         # - Enter a new realm or a existing one
-        if [[ ${2} == "--master" && ${CURRENT_BRANCH} != ${COMMON_BRANCH} ]]; then
-            # The --switch action
+        if [[ ${2} == "-c" && ${CURRENT_BRANCH} != ${COMMON_BRANCH} ]]; then
             echo "Going to checkout from ${COMMON_BRANCH} branch."
             tail=${COMMON_BRANCH}
             shift
@@ -179,10 +178,10 @@ case ${1} in
         # - Man-like help
         cat <<EOF
 git-realm
-Version ${VER}; By dehahost (https://github.com/dehahost)
+version ${VER}; by dehahost (https://github.com/dehahost)
 
 SYNOPSIS
-    git-realm enter [--master] [realm-name]
+    git-realm enter [-c] [realm-name]
     git-realm reword [new-realm-name]
     git-realm leave
     git-realm dispose [realm-name]
@@ -192,31 +191,29 @@ DESCRIPTION
     git-realm takes a different approach to branch naming.
     It offers efficient way to work with git branches and getting things done quickly.
 
-OPTIONS
+COMMANDS
     dispose [realm-name]
-        Disposes current or given realm name.
-        User is switched to ${COMMON_BRANCH} branch after disposing current realm.
+        Disposes current or given realm name and returns back to ${COMMON_BRANCH} branch.
 
     enter
-        Checkout to the branch named '${REALM_PREFIX}' followed by two random words (ie. ${REALM_GENERATED_NAME}).
-        New realm is based on currently active branch or realm.
+        Creates or checks out existing realm branch.
 
-        [--master]
-            When it is used, new realm will be based on ${COMMON_BRANCH} branch.
-            Argument have to be typed after the 'enter' option.
+        [-c]
+            When used, new realm is created from ${COMMON_BRANCH} branch.
+            Argument have to be typed after the 'enter' command.
 
         [realm-name]
             Allows to enter existing realms or create new ones with a custom name.
             See the NAMING CONVENTIONS section to learn more.
 
     leave
-        Leaves active realm and returns to ${COMMON_BRANCH} branch. This also applies to the nested realm as well.
+        Returns back to ${COMMON_BRANCH} branch.
 
     list
-        Lists all available realms in the current Git repository.
+        Lists all known realms in the Git repository.
 
     reword
-        Renames currently used realm to a randomly choosed one.
+        Rewords currently used realm to a randomly choosen or given name.
 
         [new-realm-name]
             Allows to enter desired realm name.
@@ -224,8 +221,8 @@ OPTIONS
 
 NAMING CONVENTIONS
     Realm name
-        Realm name MUST consists form a prefix (word 'realm') and two words.
-        Those three words MUST be separated by '${SEPARATOR}'.
+        Realm name MUST consists from a prefix - word 'realm' - and two words.
+        Those three words MUST be separated by '${SEPARATOR}'. First separator MAY BE a dash or a slash.
         Two words after a prefix CAN be manually entered by a user or anoter script or program. Two random words will be used by default.
 
         This can be converted into a simple regular expression:
