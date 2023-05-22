@@ -61,6 +61,37 @@ realm_exists() {
     unset _r && return 1
 }
 
+# - Dependencies check
+#
+dep_check_bin() {
+    if [[ "x" == "x$(whereis $1 | cut -d' ' -f2)" ]]; then
+        echo "Missing package: $2"
+        return 1
+    fi
+}
+
+dep_check_file() {
+    if [[ ! -r $1 ]]; then
+        echo "Missing package: $2"
+        return 1
+    fi
+}
+
+check_dependencies() {
+    local _pts=0
+
+    dep_check_bin git git || _pts=$(($_pts + 1))
+    case $1 in
+        "openSUSE")
+            dep_check_file /usr/share/cracklib/pw_dict.pwd cracklib-dict-small || _pts=$(($_pts + 1))
+            dep_check_bin cracklib-unpacker cracklib                           || _pts=$(($_pts + 1))
+     ;; *)
+            dep_check_file /usr/share/dict/cracklib-small libcrack2            || _pts=$(($_pts + 1))
+     ;;
+    esac
+    [[ _pts -gt 0 ]] && exit 1
+}
+
 # - Dictionary path
 #
 opensuse_unpack_cracklib() {
@@ -85,6 +116,7 @@ decide_dictionary() {
 [[ ${USER} != "root" ]] && SUDO="sudo"
 OS_NAME=$(cat /etc/*-release | grep ^NAME | cut -d\" -f2 | cut -d" " -f1)
 
+check_dependencies ${OS_NAME}
 decide_dictionary ${OS_NAME}
 load_from_git_config
 
