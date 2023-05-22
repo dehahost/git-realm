@@ -26,19 +26,24 @@ UNPACK_PATH="/tmp/cracklib_pw.dict"
 
 # - Load realm.* key-vals from git config
 load_from_git_config() {
-    local kv=( $(git config -l | grep -E '^realm\..+$') )
-    for v in "${kv[@]}"; do
-        local _k=$(echo ${v} | sed -E 's/realm\.(\w+)=.+/\1/')
-        local _v=$(echo ${v} | sed -E 's/realm\.\w+=(.+)/\1/')
-        set_conf ${_k} ${_v}
+    # Respect init.defaultBranch
+    init_default_branch=$(git config --get init.defaultBranch) && \
+        COMMON_BRANCH=${init_default_branch}
+
+    local conflist=( $(git config -l | grep -E '^realm\..+$') )
+    for line in "${conflist[@]}"; do
+        local _key=$(echo ${line} | sed -E 's/realm\.(\w+)=.+/\1/')
+        local _val=$(echo ${line} | sed -E 's/realm\.\w+=(.+)/\1/')
+        set_conf ${_key} ${_val}
     done
 }
 
 # - Set configuration
 set_conf() {
     case ${1} in
-        "separator")     SEPARATOR=${2};;
-        "common-branch") COMMON_BRANCH=${2};;
+        "separator")    SEPARATOR=${2};;
+        "commonBranch") COMMON_BRANCH=${2};;
+        "unpackPath")   UNPACK_PATH=${2};;
     esac
 }
 
