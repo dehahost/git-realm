@@ -17,6 +17,9 @@ SEPARATOR="-"
 # - Common branch name
 #   Could be "main", default is "master"
 COMMON_BRANCH="master"
+# - Where should be saved output of cracklib-unpacker
+#   openSUSE only, default is "/tmp/cracklib_pw.dict"
+UNPACK_PATH="/tmp/cracklib_pw.dict"
 
 
 ## Functions
@@ -58,17 +61,40 @@ realm_exists() {
     unset _r && return 1
 }
 
+# - Dictionary path
+#
+opensuse_unpack_cracklib() {
+    [[ -r ${UNPACK_PATH} ]] && return
+    echo "Unpacking cracklib password dict to ${UNPACK_PATH}..."
+    ${SUDO} cracklib-unpacker /usr/share/cracklib/pw_dict >${UNPACK_PATH}
+}
 
-## Configure with Git config
+decide_dictionary() {
+    case $1 in
+        "openSUSE")
+            opensuse_unpack_cracklib
+            DICT_PATH="${UNPACK_PATH}"
+     ;; *)
+            DICT_PATH="/usr/share/dict/cracklib-small"
+     ;;
+    esac
+}
+
+
+## Statup procedures
+[[ ${USER} != "root" ]] && SUDO="sudo"
+OS_NAME=$(cat /etc/*-release | grep ^NAME | cut -d\" -f2 | cut -d" " -f1)
+
+decide_dictionary ${OS_NAME}
 load_from_git_config
 
 
 ## Constants
-CURRENT_BRANCH=$(git branch 2> /dev/null | sed -e '/^[^*]/d; s/\* \(.*\)/\1/')
+CURRENT_BRANCH=$(git branch 2>/dev/null | sed -e '/^[^*]/d; s/\* \(.*\)/\1/')
 
 REALM_PREFIX="realm${SEPARATOR}"
-REALM_GENERATED_NAME="${REALM_PREFIX}$(echo -n $(shuf -n2 /usr/share/dict/cracklib-small) | sed -E "s/['\.&+\\-]//g; s/\s/-/g")"
-REALM_BRANCHES=( $(git branch | grep -oE "${REALM_PREFIX}[^ ]+") )
+REALM_GENERATED_NAME="${REALM_PREFIX}$(echo -n $(shuf -n2 ${DICT_PATH}) | sed -E "s/['\.&+\\-]//g; s/\s/-/g")"
+REALM_BRANCHES=( $(git branch 2>/dev/null | grep -oE "${REALM_PREFIX}[^ ]+") )
 
 
 ## Program section
