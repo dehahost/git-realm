@@ -22,17 +22,17 @@ COMMON_BRANCH="master"
 ## Functions
 
 # - Load realm.* key-vals from git config
-load-from-git-config() {
-    kv=( $(git config -l | grep -E '^realm\..+$') )
+load_from_git_config() {
+    local kv=( $(git config -l | grep -E '^realm\..+$') )
     for v in "${kv[@]}"; do
-        _k=$(echo ${v} | sed -E 's/realm\.(\w+)=.+/\1/')
-        _v=$(echo ${v} | sed -E 's/realm\.\w+=(.+)/\1/')
-        set-conf ${_k} ${_v}
+        local _k=$(echo ${v} | sed -E 's/realm\.(\w+)=.+/\1/')
+        local _v=$(echo ${v} | sed -E 's/realm\.\w+=(.+)/\1/')
+        set_conf ${_k} ${_v}
     done
 }
 
 # - Set configuration
-set-conf() {
+set_conf() {
     case ${1} in
         "separator")     SEPARATOR=${2};;
         "common-branch") COMMON_BRANCH=${2};;
@@ -40,18 +40,18 @@ set-conf() {
 }
 
 # - Realm name formatter
-realm-name() {
+realm_name() {
     [[ ${1} =~ ^${REALM_PREFIX} ]] && echo ${1#*${SEPARATOR}} || echo ${1}
 }
 
 # - Realm branch name formatter
-realm-branch() {
+realm_branch() {
     [[ ${1} =~ ^${REALM_PREFIX} ]] && echo ${1} || echo ${REALM_PREFIX}${1}
 }
 
 # - Realm branch matcher
-realm-exists() {
-    input=$(realm-branch ${1})
+realm_exists() {
+    local input=$(realm_branch ${1})
     for _r in ${REALM_BRANCHES[@]}; do
         [[ ${input} == ${_r} ]] && unset _r && return 0
     done
@@ -60,7 +60,7 @@ realm-exists() {
 
 
 ## Configure with Git config
-load-from-git-config
+load_from_git_config
 
 
 ## Constants
@@ -93,23 +93,23 @@ case ${1} in
         # Match and use user typed realm name or use randomly generated one
         # This allows user to choose custom two worlded realm name
         if [[ ${2} =~ ^(${REALM_PREFIX})?[a-zA-Z0-9]+-[a-zA-Z0-9]+$ ]]; then
-            realm=$(realm-branch ${2})
+            realm=$(realm_branch ${2})
         fi
 
         # Skip if alredy in wanted realm
         if [[ ${realm} == ${CURRENT_BRANCH} ]]; then
-            echo "Already in realm '$(realm-name ${realm})'"
+            echo "Already in realm '$(realm_name ${realm})'"
             exit
         fi
 
         # Checkout existing realm branch or a new one
-        if realm-exists ${realm}; then
-            echo "Entering realm called '$(realm-name ${realm})'..."
+        if realm_exists ${realm}; then
+            echo "Entering realm called '$(realm_name ${realm})'..."
             git checkout ${realm} ${tail}
             exit
         fi
 
-        echo "Creating a new realm called '$(realm-name ${realm})'..."
+        echo "Creating a new realm called '$(realm_name ${realm})'..."
         git checkout -b ${realm} ${tail}
 
  ;; "leave")
@@ -119,7 +119,7 @@ case ${1} in
             exit 1
         fi
 
-        echo "Leaving realm called '$(realm-name ${CURRENT_BRANCH})'..."
+        echo "Leaving realm called '$(realm_name ${CURRENT_BRANCH})'..."
         git checkout ${COMMON_BRANCH}
 
  ;; "dispose")
@@ -127,13 +127,13 @@ case ${1} in
 
         # Support disposing realm by inputed name
         if [[ ${2} != "" && ${2} != ${CURRENT_BRANCH} ]]; then
-            if ! realm-exists ${2}; then
-                echo "Entered realm '$(realm-name ${2})' do not exist!"
+            if ! realm_exists ${2}; then
+                echo "Entered realm '$(realm_name ${2})' do not exist!"
                 exit 1
             fi
 
-            echo "Disposing realm called '$(realm-name ${2})'..."
-            git branch -D $(realm-branch ${2})
+            echo "Disposing realm called '$(realm_name ${2})'..."
+            git branch -D $(realm_branch ${2})
             exit
         fi
 
@@ -142,7 +142,7 @@ case ${1} in
             exit 1
         fi
 
-        echo "Leaving and disposing currently used realm called '$(realm-name ${CURRENT_BRANCH})'..."
+        echo "Leaving and disposing currently used realm called '$(realm_name ${CURRENT_BRANCH})'..."
         git checkout -f ${COMMON_BRANCH}
         git branch -D ${CURRENT_BRANCH}
 
@@ -158,16 +158,16 @@ case ${1} in
 
         # Allow user to enter new realm name
         if [[ ${2} =~ ^(${REALM_PREFIX})?[a-zA-Z0-9]+-[a-zA-Z0-9]+$ ]]; then
-            realm=$(realm-branch ${2})
+            realm=$(realm_branch ${2})
         fi
 
         # Check - existing branch
-        if realm-exists ${realm}; then
-            echo "Cannot reword to '$(realm-name ${realm})' because it is already taken!"
+        if realm_exists ${realm}; then
+            echo "Cannot reword to '$(realm_name ${realm})' because it is already taken!"
             exit 1
         fi
 
-        echo "Rewording to '$(realm-name ${realm})'..."
+        echo "Rewording to '$(realm_name ${realm})'..."
         git branch -M ${CURRENT_BRANCH} ${realm}
 
  ;; "list")
