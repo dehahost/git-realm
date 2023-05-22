@@ -1,16 +1,17 @@
 # git-realm
 
-git-realm is Git plugin written mainly for fast and/or creative development.
+git-realm is a Git plugin written mainly for fast and/or creative development.
 
 ## Requirements
 
-Install dictionary package `libcrack2`.
+Make sure you have Cracklib packages installed. If not run the following:
 
 ```bash
-# / Debian based systems (Debian, Ubuntu, Linux Mint, etc.)
+# / Debian based systems - Debian, Ubuntu, Linux Mint, etc.
 ~$ sudo apt-get install libcrack2
-# / openSUSE
-~$ sudo zypper install libcrack2
+
+# / openSUSE (may not be required)
+~$ sudo zypper install cracklib
 ```
 
 ## Installation
@@ -24,7 +25,8 @@ Install dictionary package `libcrack2`.
 git-realm can be configured with Git config:
 
 - `realm.separator` _(default: -)_ Separator character between _"realm"_ and realm name - ie. "realm-decent-stray" or "realm/gastro-tour"
-- `realm.common-branch` _(default: master)_ Common Git branch - could be _main_, some prefers _master_, others _production_.
+- `realm.commonBranch` _(default: master)_ Common Git branch - could be _main_, some prefers _master_, others _production_.
+- `realm.unpackPath` _(default: /tmp/cracklib_pw.dict)_ Where should be saved output of cracklib-unpacker - openSUSE only
 
 ## Usage
 
