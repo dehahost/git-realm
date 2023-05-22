@@ -131,6 +131,7 @@ Deleted branch realm-base-one (was bb52534).
 - [x] Configuration support
 - [ ] Merging realms into common branch (like Git-Flow)
 - [ ] Rewording without entering the realm
+- [ ] Bash completion
 
 ## Dependant commands
 
